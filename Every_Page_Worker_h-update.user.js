@@ -14,6 +14,7 @@
 // ==/UserScript==
 
 
+
 window.addEventListener('DOMContentLoaded', function(){ // CSSデザインを適用する
     let body_id=document.body.getAttribute('id');
     if(body_id=='entryListEdit'){ //「記事の編集・削除」の画面にのみCSS適用
@@ -398,7 +399,7 @@ window.addEventListener('load', function(){ // 親ウインドウで働くメイ
                 let editor_flg=new_win[k].document.querySelector('input[name="editor_flg"]');
                 if(editor_flg.value=="5"){ // 最新版エディタの文書の場合のみ処理
 
-                    let interval=setInterval(find_iframe, 100); // iframe 読込み待機コード 🟥
+                    let interval=setInterval(find_iframe, 100); // iframe 読込み待機コード ⬛ Speed調節 ⬛
                     function find_iframe(){
                         let editor_iframe=new_win[k].document.querySelector('.cke_wysiwyg_frame');
                         if(editor_iframe){
@@ -411,10 +412,9 @@ window.addEventListener('load', function(){ // 親ウインドウで働くメイ
 
                                     let promise=new Promise((resolve, reject)=>{
                                         let svg_img=iframe_doc.querySelector('svg');
-                                        if(svg_img){ // 編集非対応 ⬛🟧⬛
-                                            send_result(1);
+                                        if(svg_img){ // 編集非対応 🟥🟧🟥
                                             reject(); }
-                                        else{ // h2・h3 の書換え
+                                        else{ // 編集 h2・h3 書換え 🟥🟧🟥
                                             let h2_s=iframe_doc.querySelectorAll('h2 > span');
                                             for(let k=0; k<h2_s.length; k++){
                                                 let s2_style=h2_s[k].getAttribute('style');
@@ -431,12 +431,12 @@ window.addEventListener('load', function(){ // 親ウインドウで働くメイ
                                                 let s_style1=inline_s.replace('0.32em 1em 0.2em', '.26em 1em .24em');
                                                 let s_style2=s_style1.replace('.32em 1em .2em', '.26em 1em .24em');
                                                 h_elem.setAttribute('style', s_style2); }
-                                            resolve();
-                                        } // else
+
+                                            resolve(); }
 
                                     })
-                                    .then(()=>{
-                                        let not=0; // h2・h3 の書換えチェック
+                                    .then(()=>{ // 定型外の h2・h3 チェック 🟥🟧🟥
+                                        let not=0;
                                         let h2_s_=iframe_doc.querySelectorAll('h2 > span');
                                         for(let k=0; k<h2_s_.length; k++){
                                             let s2_pad=h2_s_[k].style.padding;
@@ -453,37 +453,43 @@ window.addEventListener('load', function(){ // 親ウインドウで働くメイ
                                                     not+=1;
                                                     break; }}}
 
-                                        if(not==0){ // 処理成功 ⬛🟧⬛
-                                            send_result(0);
-                                            publish_do(k); }
-                                        else{ // 編集不成功の場合  ⬛🟧⬛
-                                            send_result(1); }
+                                        return not;
 
                                     })
                                     .catch(()=>{
 
+                                        return 1;
+
                                     })
-                                    .then((val) => {
+                                    .then((not)=>{
+
+                                        if(not==0){ // 処理成功 🟥🟧🟥
+                                            send_result(0); // 処理結果をデータ保存
+                                            publish_do(k); } // 編集結果を投稿
+                                        else{ // 編集不成功の場合 🟥🟧🟥
+                                            send_result(1); } // 処理結果をデータ保存
+
                                         strage_write();
                                         snap_disp();
                                         hit_display();
-                                        end_target();
+                                        end_target(); // 再編集のウインドウを閉じる
                                     });
 
-
-                                    function send_result(n){
-                                        let index=entry_id_DB.indexOf(entry_id[k].value);
-                                        if(index==-1){ // IDがblogDBに記録されていない場合
-                                            if(n==1){
-                                                blogDB.push([entry_id[k].value, 1, 0]); }} // 記事ID/フラグを追加
-                                        else{ // IDがblogDBに記録されていた場合
-                                            if(n==1){
-                                                blogDB[index][1]=1; } // 記事ID/フラグ「1」を更新
-                                            else{
-                                                blogDB[index][1]=0; }} // 記事ID/フラグ「0」を更新
-                                        reg_set(); }
-
                                 } // task_in()
+
+
+
+                                function send_result(n){
+                                    let index=entry_id_DB.indexOf(entry_id[k].value);
+                                    if(index==-1){ // IDがblogDBに記録されていない場合
+                                        if(n==1){
+                                            blogDB.push([entry_id[k].value, 1, 0]); }} // 記事ID/フラグを追加
+                                    else{ // IDがblogDBに記録されていた場合
+                                        if(n==1){
+                                            blogDB[index][1]=1; } // 記事ID/フラグ「1」を更新
+                                        else{
+                                            blogDB[index][1]=0; }} // 記事ID/フラグ「0」を更新
+                                    reg_set(); }
 
 
                                 function strage_write(){
